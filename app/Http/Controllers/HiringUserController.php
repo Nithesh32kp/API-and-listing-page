@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\HiringUser;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Database\QueryException;
 
 class HiringUserController extends BaseController
 {
@@ -21,14 +22,21 @@ class HiringUserController extends BaseController
                 'name' => 'required|string|max:255',
                 'email' => 'required|email|unique:hiring_users,email',
                 'notes' => 'nullable|string',
-                'phone' => 'nullable|string|max:20',
+                'phone' => 'nullable|string|max:20|unique:hiring_users,phone',
             ]);
         } catch (ValidationException $e) {
-            return $this->sendError('Validation Error.', $e->errors(), 422);
+            return $this->sendError('Please check your details and try again.', $e->errors(), 422);
         }
 
-        $hiringUser = HiringUser::create($validated);
-        return $this->sendResponse($hiringUser, 'Hiring user created successfully.', 201);
+        try {
+            $hiringUser = HiringUser::create($validated);
+            return $this->sendResponse($hiringUser, 'Thanks! Your message has been sent successfully.', 201);
+        } catch (QueryException $e) {
+            // Catches things like duplicate phone/email that slipped past validation
+            return $this->sendError('This email or phone number has already been submitted.', [], 409);
+        } catch (\Exception $e) {
+            // Catches anything else unexpected — never expose raw DB errors
+            return $this->sendError('Something went wrong on our end. Please try again shortly.', [], 500);
+        }
     }
-    
 }
