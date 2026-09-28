@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendConfirmationHiring;
 use App\Models\HiringUser;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -30,6 +31,7 @@ class HiringUserController extends BaseController
 
         try {
             $hiringUser = HiringUser::create($validated);
+            SendConfirmationHiring::dispatch($validated);
             return $this->sendResponse($hiringUser, 'Thanks! Your message has been sent successfully.', 201);
         } catch (QueryException $e) {
             // Catches things like duplicate phone/email that slipped past validation
