@@ -31,7 +31,7 @@ class HiringUserController extends BaseController
 
         try {
             $hiringUser = HiringUser::create($validated);
-            SendConfirmationHiring::dispatch($validated);
+            SendConfirmationHiring::dispatch($hiringUser);
             return $this->sendResponse($hiringUser, 'Thanks! Your message has been sent successfully.', 201);
         } catch (QueryException $e) {
             // Catches things like duplicate phone/email that slipped past validation
