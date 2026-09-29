@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\Schedule;
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
-
 Schedule::command('hiring:remind-unresponded')
     ->everyMinute()
-    ->withoutOverlapping();
+    ->withoutOverlapping()
+    ->onFailure(fn() => \Log::error('hiring reminder failed'))
+    ->sendOutputTo(storage_path('logs/schedule.log'));

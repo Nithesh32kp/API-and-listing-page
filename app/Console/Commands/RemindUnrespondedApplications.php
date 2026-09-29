@@ -28,10 +28,16 @@ class RemindUnrespondedApplications extends Command
         }
 
         foreach ($pending as $applicant) {
-            Mail::raw(
-                "Reminder: {$applicant->name} ({$applicant->email}, {$applicant->phone}) applied on {$applicant->created_at->format('d M Y, h:i A')} and hasn't received a response yet.",
-                fn($m) => $m->to(config('services.hiring.notify_email'))->subject('Reminder: unresponded application')
-            );
+            try {
+                Mail::raw(
+                    "Reminder: {$applicant->name} ({$applicant->email}, {$applicant->phone}) applied on {$applicant->created_at->format('d M Y, h:i A')} and hasn't received a response yet.",
+                    fn($m) => $m->to(config('services.hiring.notify_email'))->subject('Reminder: unresponded application')
+                );
+            } catch (\Throwable $e) {
+                \Log::error('Reminder failed: ' . $e->getMessage());
+                $this->error($e->getMessage());
+                return Command::FAILURE;
+            }
 
             $applicant->update(['reminder_sent_at' => now()]);
             $this->info("Reminder sent for applicant #{$applicant->id}");
