@@ -9,6 +9,6 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('payments:mark-expired')
+Schedule::command('hiring:remind-unresponded')
     ->everyMinute()
     ->withoutOverlapping();

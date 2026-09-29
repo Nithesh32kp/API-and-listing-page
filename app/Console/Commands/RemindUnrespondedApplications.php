@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\HiringUser;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
+use Illuminate\Console\Command;
+use Mail;
+
+#[Signature('app:remind-unresponded-applications')]
+#[Description('Command description')]
+class RemindUnrespondedApplications extends Command
+{
+    protected $signature = 'hiring:remind-unresponded';
+
+    protected $description = 'Remind admin about applications with no response after 24 hours';
+    public function handle()
+    {
+        $pending = HiringUser::whereNull('responded_at')
+            ->whereNull('reminder_sent_at')
+            ->where('created_at', '<', now()->subHours(24))
+            ->get();
+
+        if ($pending->isEmpty()) {
+            $this->info('No pending reminders.');
+            return Command::SUCCESS;
+        }
+
+        foreach ($pending as $applicant) {
+            Mail::raw(
+                "Reminder: {$applicant->name} ({$applicant->email}, {$applicant->phone}) applied on {$applicant->created_at->format('d M Y, h:i A')} and hasn't received a response yet.",
+                fn($m) => $m->to(config('services.hiring.notify_email'))->subject('Reminder: unresponded application')
+            );
+
+            $applicant->update(['reminder_sent_at' => now()]);
+            $this->info("Reminder sent for applicant #{$applicant->id}");
+        }
+
+        $this->info("{$pending->count()} reminders sent.");
+        return Command::SUCCESS;
+    }
+}
