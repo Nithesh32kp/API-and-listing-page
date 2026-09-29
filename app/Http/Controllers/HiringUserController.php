@@ -7,6 +7,7 @@ use App\Models\HiringUser;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\QueryException;
+use Log;
 
 class HiringUserController extends BaseController
 {
@@ -31,13 +32,18 @@ class HiringUserController extends BaseController
 
         try {
             $hiringUser = HiringUser::create($validated);
+            Log::info('Hiring API: before dispatch');
             SendConfirmationHiring::dispatch($hiringUser);
+            Log::info('Hiring API: after dispatch');
             return $this->sendResponse($hiringUser, 'Thanks! Your message has been sent successfully.', 201);
         } catch (QueryException $e) {
-            // Catches things like duplicate phone/email that slipped past validation
             return $this->sendError('This email or phone number has already been submitted.', [], 409);
         } catch (\Exception $e) {
-            // Catches anything else unexpected — never expose raw DB errors
+            Log::error('Hiring API failed', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
             return $this->sendError('Something went wrong on our end. Please try again shortly.', [], 500);
         }
     }
