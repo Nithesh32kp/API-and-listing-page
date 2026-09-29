@@ -6,15 +6,13 @@ use App\Models\HiringUser;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
-use Mail;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
-#[Signature('app:remind-unresponded-applications')]
-#[Description('Command description')]
+#[Signature('hiring:remind-unresponded')]
+#[Description('Remind admin about applications with no response after 24 hours')]
 class RemindUnrespondedApplications extends Command
 {
-    protected $signature = 'hiring:remind-unresponded';
-
-    protected $description = 'Remind admin about applications with no response after 24 hours';
     public function handle()
     {
         $pending = HiringUser::whereNull('responded_at')
@@ -34,7 +32,7 @@ class RemindUnrespondedApplications extends Command
                     fn($m) => $m->to(config('services.hiring.notify_email'))->subject('Reminder: unresponded application')
                 );
             } catch (\Throwable $e) {
-                \Log::error('Reminder failed: ' . $e->getMessage());
+                Log::error('Reminder failed: ' . $e->getMessage());
                 $this->error($e->getMessage());
                 return Command::FAILURE;
             }
