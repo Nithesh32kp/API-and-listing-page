@@ -11,5 +11,7 @@ Artisan::command('inspire', function () {
 Schedule::command('hiring:remind-unresponded')
     ->everyMinute()
     ->withoutOverlapping()
-    ->onFailure(fn() => \Log::error('hiring reminder failed'))
-    ->sendOutputTo(storage_path('logs/schedule.log'));
+    ->sendOutputTo(storage_path('logs/schedule.log'))
+    ->onFailureWithOutput(function (Stringable $output) {
+        Log::error('Reminder output: ' . $output);
+    });
